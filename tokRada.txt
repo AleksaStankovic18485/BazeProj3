@@ -5,3 +5,6 @@
 	*sredi/prebaci globale tamo gde treba
 4. Uporedo njih idu i u DTO's kao sto je bio xPregled (gde je x ime entiteta), treba da odradimo xView
 	*vratiSveNarodnePoslanikeAsync je odradjen kao test
+		*proveriti VratiSveStalneOdnosRadnike
+
+	*sledece na redu SluzbenaProstorija

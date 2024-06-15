@@ -17,7 +17,7 @@ namespace NarodnaSkupstina
     {
         #region NarodniPoslanik
 
-        public async static Task<Result<List<NarodniPoslanikView>, ErrorMessage>> vratiSveNarodnePoslanikeAsync()
+        public async static Task<Result<List<NarodniPoslanikView>, ErrorMessage>> VratiSveNarodnePoslanikeAsync()
         {
             ISession? s = null;
             List<NarodniPoslanikView> np = new ();
@@ -54,28 +54,38 @@ namespace NarodnaSkupstina
             return np;
         }
 
-        public static List<NarodniPoslanikPregled> vratiSveNarodnePoslanikePgrupe(string naziv)
+        public static Result<List<NarodniPoslanikView>, ErrorMessage> VratiSveNarodnePoslanikePgrupe(string naziv)
         {
-            List<NarodniPoslanikPregled> poslanici = new List<NarodniPoslanikPregled>();
+            ISession? s = null;
+            List<NarodniPoslanikView> poslanici = new();
             try
             {
-                ISession s = DataLayer.GetSession();
-                IEnumerable<NarodnaSkupstina.Entiteti.NarodniPoslanik> sviPoslanici = from o in s.Query<NarodnaSkupstina.Entiteti.NarodniPoslanik>()
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                IEnumerable<NarodniPoslanik> sviPoslanici = from o in s.Query<NarodniPoslanik>()
                                                                                       where o.PGrupa.Naziv== naziv
                                                                                       select o;
-                foreach (NarodnaSkupstina.Entiteti.NarodniPoslanik r in sviPoslanici)
+                foreach (NarodniPoslanik r in sviPoslanici)
                 {
-                    poslanici.Add(new NarodniPoslanikPregled(r.Id, r.JMBG, r.IdentifikacioniBroj, r.Ime, r.ImeJednogRoditelja, r.Prezime, r.DatumRodjenja, r.MestoRodjenja, r.Grad, r.Adresa, r.BrojTelefona, r.BrojMobilnog, r.StalniRadniOdnos));
+                    poslanici.Add(new NarodniPoslanikView(r));
                 }
-                s.Close();
+                
             }
-            catch (Exception e)
-            { Console.WriteLine(e.ToString()); } return poslanici;
+            catch (Exception)
+            { return "Nemoguće vratiti sve narodne poslanike koji su u PoslanickojGrupi sa zadatim ID-jem.".ToError(400); }
+            finally{
+                s?.Close();
+                s?.Dispose();
+            }
+            return poslanici;
         }
 
-        public static List<NarodniPoslanikBasic> vratiNPAnketni(string tip)
+        public static Result<List<NarodniPoslanikView>,ErrorMessage> VratiNPAnketni(string tip)
         {
-            List<NarodniPoslanikBasic> poslanici = new List<NarodniPoslanikBasic>();
+            List<NarodniPoslanikView> poslanici = new();
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -84,83 +94,109 @@ namespace NarodnaSkupstina
                                                                                       select o;
                 foreach (NarodnaSkupstina.Entiteti.NarodniPoslanik r in sviPoslanici)
                 {
-                    RadnoTeloBasic rt = DTOManager.vratiRadnoTelo(r.RadnoT.Tip);
-                    PoslanickaBasic pgrupica = DTOManager.vratiPGrupu(r.PGrupa.Naziv);
-                    poslanici.Add(new NarodniPoslanikBasic(r.Id, r.JMBG, r.IdentifikacioniBroj, r.Ime, r.ImeJednogRoditelja, r.Prezime, r.DatumRodjenja, r.MestoRodjenja, r.Grad, r.Adresa, r.BrojTelefona, r.BrojMobilnog, r.StalniRadniOdnos, pgrupica,rt));
+                    var radnoTel = VratiRadnoTelo(r.RadnoT.Tip);
+                    //RadnoTeloBasic rt = DTOManager.vratiRadnoTelo(r.RadnoT.Tip);
+                    var posG = VratiPGrupu(r.PGrupa.Naziv);
+                    //PoslanickaBasic pgrupica = DTOManager.vratiPGrupu(r.PGrupa.Naziv);
+                    poslanici.Add(new NarodniPoslanikView(r));
                 }
                 s.Close();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.ToString()); 
+                return "Nemoguće vratiti sve NarodnePoslanike Anketnog Odbora (svih odbora) sa zadatim ID-jem.".ToError(400);
             }
             return poslanici;
         }
 
-        public static void obrisiPoslanika(int id)
+        public static Result<bool, ErrorMessage> ObrisiPoslanika(int id)
         {
             try
             {
                 ISession s = DataLayer.GetSession();
-                NarodnaSkupstina.Entiteti.NarodniPoslanik n = s.Load<NarodnaSkupstina.Entiteti.NarodniPoslanik>(id);
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                NarodniPoslanik n = s.Load<NarodniPoslanik>(id);
                 s.Delete(n);
                 s.Flush();
 
                 s.Close();
             }
-            catch(Exception ex) { Console.WriteLine(ex.ToString());
-        }    
+            catch(Exception )
+            {
+                return "Nemoguće obrisati radnika sa zadatim ID-jem.".ToError(400);
+        }
+            return true;
          }
 
-        public static void dodajPoslanika(NarodniPoslanikBasic nb)
+        public async static Task<Result<bool, ErrorMessage>> DodajPoslanikaAsync(NarodniPoslanikView nb)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
 
-                NarodnaSkupstina.Entiteti.NarodniPoslanik n = new NarodnaSkupstina.Entiteti.NarodniPoslanik();
-                n.JMBG=nb.JMBG;
-                n.IdentifikacioniBroj=nb.Identif; //mzd nije dobro mzd treba ide id
-                n.Ime = nb.Ime;
-                n.ImeJednogRoditelja = nb.ImeRod;
-                n.Prezime = nb.Prezime;
-                n.DatumRodjenja = nb.DatumR;
-                n.MestoRodjenja = nb.MestoR;
-                n.Grad=nb.Grad;
-                n.Adresa = nb.Adresa;
-                n.BrojTelefona = nb.BrojT;
-                n.BrojMobilnog = nb.BrojM;
-                n.StalniRadniOdnos = nb.StalniR; //ovo sad dodato
-                //protectrd je set pa zato nemoze vidi za to
-                s.SaveOrUpdate(n);
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                s.Flush();
-                s.Close();
+                NarodniPoslanik n = new()
+                {
+                    JMBG = nb.JMBG,
+                    IdentifikacioniBroj = nb.IdentifikacioniBroj,
+                    Ime = nb.Ime,
+                    ImeJednogRoditelja = nb.ImeJednogRoditelja,
+                    Prezime = nb.Prezime,
+                    DatumRodjenja = nb.DatumRodjenja,
+                    MestoRodjenja = nb.MestoRodjenja,
+                    Grad = nb.Grad,
+                    Adresa = nb.Adresa,
+                    BrojTelefona = nb.BrojTelefona,
+                    BrojMobilnog = nb.BrojMobilnog,
+                    StalniRadniOdnos = nb.StalniRadniOdnos //ovo sad dodato
+                                                           //protectrd je set pa zato nemoze vidi za to
+                };
+                await s.SaveOrUpdateAsync(n);
+
+                await s.FlushAsync();
+                
             }
             catch (Exception ec)
             {
-                Console.WriteLine (ec.ToString());
+                return "Nemoguće dodati NarodnogPoslanika.".ToError(400);
             }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+            return true;
         }
 
-        public static NarodniPoslanikBasic azurirajPoslanika(NarodniPoslanikBasic r)
+        public static Result<NarodniPoslanikView, ErrorMessage> AzurirajPoslanika(NarodniPoslanikView r)
         {
             try
             {
                 ISession s = DataLayer.GetSession();
-                NarodnaSkupstina.Entiteti.NarodniPoslanik n = s.Load<NarodnaSkupstina.Entiteti.NarodniPoslanik>(r.Id
-                    /*mzd ide identif*/);
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                NarodniPoslanik n = s.Load<NarodniPoslanik>(r.Id);
                 n.JMBG = r.JMBG;
-                n.IdentifikacioniBroj = r.Identif; //mzd nije dobro mzd treba ide id
+                n.IdentifikacioniBroj = r.IdentifikacioniBroj; //
                 n.Ime = r.Ime;
-                n.ImeJednogRoditelja = r.ImeRod;
+                n.ImeJednogRoditelja = r.ImeJednogRoditelja;
                 n.Prezime = r.Prezime;
-                n.DatumRodjenja = r.DatumR;
-                n.MestoRodjenja = r.MestoR;
+                n.DatumRodjenja = r.DatumRodjenja;
+                n.MestoRodjenja = r.MestoRodjenja;
                 n.Grad = r.Grad;
                 n.Adresa = r.Adresa;
-                n.BrojTelefona = r.BrojT;
-                n.BrojMobilnog = r.BrojM;
+                n.BrojTelefona = r.BrojTelefona;
+                n.BrojMobilnog = r.BrojMobilnog;
 
                 s.Update(n);
                 s.Flush();
@@ -168,24 +204,34 @@ namespace NarodnaSkupstina
             }
             catch(Exception e)
             {
-                Console.WriteLine(e.ToString());
+                return "Nemoguće ažurirati NarodnogPoslanika.".ToError(400);
             }
             return r; //msm da ovde ide o al ono
         }
 
-        public static NarodniPoslanikBasic vratiNarodnog(int id)
+        public async static Task<Result<NarodniPoslanikView, ErrorMessage>> VratiNarodnog(int id)
         {
-            NarodniPoslanikBasic nb = new NarodniPoslanikBasic();
+            ISession? s = null;
+            NarodniPoslanikView nb = default!; //msm da ide mzd new ();
             try
             {
-                ISession s = DataLayer.GetSession();
-                NarodnaSkupstina.Entiteti.NarodniPoslanik n = s.Load<NarodnaSkupstina.Entiteti.NarodniPoslanik>(id);
-                RadnoTeloBasic rt = DTOManager.vratiRadnoTelo(n.RadnoT.Tip);
-                PoslanickaBasic pgrupica = DTOManager.vratiPGrupu(n.PGrupa.Naziv);
-                nb = new NarodniPoslanikBasic(n.Id, n.JMBG, n.IdentifikacioniBroj, n.Ime, n.ImeJednogRoditelja, n.Prezime, n.DatumRodjenja, n.MestoRodjenja, n.Grad, n.Adresa, n.BrojTelefona, n.BrojMobilnog, n.StalniRadniOdnos, pgrupica, rt);
-                s.Close();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                NarodniPoslanik n = await s.LoadAsync<NarodniPoslanik>(id);
+                //RadnoTeloBasic rt = DTOManager.vratiRadnoTelo(n.RadnoT.Tip);
+                //PoslanickaBasic pgrupica = DTOManager.vratiPGrupu(n.PGrupa.Naziv);
+                nb = new NarodniPoslanikView(n /*pgrupica, rt*/);
+                
             }
-            catch (Exception e) { Console.WriteLine(e.ToString()); }
+            catch (Exception) { return "Nemoguće vratiti radnika sa zadatim ID-jem.".ToError(400); }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
                 return nb;
         }
 
@@ -195,87 +241,124 @@ namespace NarodnaSkupstina
 
             #region StalniRadnik
 
-        public static List<StalniRadnikBasic> vratiSveStalneRadnike()
+        public static Result<List<StalniRadnikView>,ErrorMessage> VratiSveStalneRadnike()
         {
-            List<StalniRadnikBasic> sr = new List<StalniRadnikBasic>();
+            List<StalniRadnikView> sr = new ();
             try
             {
                 ISession s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                IEnumerable<NarodnaSkupstina.Entiteti.StalniRadnik> sviStalniRadnici = from o in s.Query<NarodnaSkupstina.Entiteti.StalniRadnik>()
+                IEnumerable<StalniRadnik> sviStalniRadnici = from o in s.Query<StalniRadnik>()
                                                                                        
                                                                                        select o;
-                foreach (NarodnaSkupstina.Entiteti.StalniRadnik p in sviStalniRadnici)
+                foreach (StalniRadnik p in sviStalniRadnici)
                 {
-                    sr.Add(new StalniRadnikBasic(p.Id, p.JMBG, p.IdentifikacioniBroj, p.Ime, p.ImeJednogRoditelja, p.Prezime, p.DatumRodjenja, p.MestoRodjenja, p.Grad, p.Adresa, p.BrojTelefona, p.BrojMobilnog, p.StalniRadniOdnos));
+                    sr.Add(new StalniRadnikView(p));
                 }
                 s.Close();
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                Console.WriteLine("Problem", ec.Message);
+                return "Nemoguće vratiti sve Stalne Radnike.".ToError(400);
             }
             return sr;
         }
 
-        public static StalniRadnikBasic vratiStalnog(int id)
+        public static Result<StalniRadnikView, ErrorMessage> VratiStalnog(int id)
         {
-            StalniRadnikBasic srb = new StalniRadnikBasic();
+            StalniRadnikView srb;
             try
             {
-                ISession s = DataLayer.GetSession();
-
-                NarodnaSkupstina.Entiteti.StalniRadnik sr = s.Load<NarodnaSkupstina.Entiteti.StalniRadnik>(id);
-                srb = new StalniRadnikBasic(sr.Id, sr.JMBG, sr.IdentifikacioniBroj, sr.Ime, sr.ImeJednogRoditelja, sr.Prezime, sr.DatumRodjenja, sr.MestoRodjenja, sr.Grad, sr.Adresa, sr.BrojTelefona, sr.BrojMobilnog, sr.StalniRadniOdnos);
+                ISession? s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                StalniRadnik sr = s.Load<StalniRadnik>(id);
+                srb = new StalniRadnikView(sr);
                 s.Close();
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                Console.WriteLine("Doslo je do greske kod vratiStalnog", ec.Message);
+                return "Nemoguće vratiti šefa.".ToError(400);
             }
             return srb;
         }
 
-        public static List<StalniRadniOdnosBasic> vratiSveStalneOdnosRadnike(/*int id*/)
+        public async static Task<Result<List<StalniRadniOdnosView>, ErrorMessage>> VratiSveStalneOdnosRadnike(/*int id*/) //mozda bude async mora se proba
         {
-            List<StalniRadniOdnosBasic> stalniO = new List<StalniRadniOdnosBasic>();
+            //da msm da cu da promenim da ne bude asinhrona al aj ga ostavimo
+            //dok ne moz se testira cu ga samo ostavimo u txt 
+            ISession? s = null;
+
+            List<StalniRadniOdnosView> stalniO = new ();
             try
             {
-                ISession s = DataLayer.GetSession();
-                IEnumerable<NarodnaSkupstina.Entiteti.StalniRadniOdnos> sviOdnos = from o in s.Query<NarodnaSkupstina.Entiteti.StalniRadniOdnos>()
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                IEnumerable<StalniRadniOdnos> sviOdnos = from o in s.Query<StalniRadniOdnos>()
                                                                                    /*where o.StalniRadnik.StalniRadniOdnos==true */                                                                            
                                                                                    select o;
-                foreach(NarodnaSkupstina.Entiteti.StalniRadniOdnos sviO in sviOdnos)
+                
+
+                foreach (StalniRadniOdnos sviO in sviOdnos)
                 {
-                    StalniRadnikBasic stalniRadnik = DTOManager.vratiStalnog(sviO.StalniRadnik.Id);
-                    stalniO.Add(new StalniRadniOdnosBasic(sviO.Id, sviO.BrojRadneKnjizice, sviO.PrethodanRadniStazGod, sviO.PrethodanRadniStazMesec, sviO.PrethodanRadniStazDan,sviO.ImeFirme,stalniRadnik));
+                    var st = VratiStalnog(sviO.StalniRadnik?.Id ?? -1); //proveriti ovo
+                   // StalniRadnikBasic stalniRadnik = DTOManager.vratiStalnog(sviO.StalniRadnik.Id);
+                   if(st.IsError) //ovo mzd sklonimo al mora testiramo prvo
+                    {
+                        continue;
+                    }
+                    stalniO.Add(new StalniRadniOdnosView(sviO));
                 }
                 s.Close();
             }
-            catch(Exception ex)
+            catch(Exception)
             {
-                //
+                return "Nemoguće vratiti sve StalneRadnike sa zadatim ID-jem.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return stalniO;
         }
 
-        public static void obrisiStalnog(int id)
+        public async static Task<Result<bool,ErrorMessage>>ObrisiStalnog(int id)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                NarodnaSkupstina.Entiteti.StalniRadniOdnos r = s.Load<NarodnaSkupstina.Entiteti.StalniRadniOdnos>(id);
+                StalniRadniOdnos r = await s.LoadAsync<StalniRadniOdnos>(id);
 
-                s.Delete(r);
-                s.Flush();
+                await s.DeleteAsync(r);
+                await s.FlushAsync();
 
-                s.Close();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.Message);
+                return "Nemoguće obrisati Stalnog.".ToError(400);
             }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+            return true;
         }
 
         #endregion
