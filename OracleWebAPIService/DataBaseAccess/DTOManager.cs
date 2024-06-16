@@ -371,104 +371,141 @@ namespace NarodnaSkupstina
 
         #region SluzbenaProstorija
 
-        public static void obrisiSluzbenaProstorija(int id)
+        public async static Task<Result<bool,ErrorMessage>> ObrisiSluzbenaProstorija(int id)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                SluzbenaProstorija prost = s.Load<SluzbenaProstorija>(id);
+                SluzbenaProstorija prost = await s.LoadAsync<SluzbenaProstorija>(id);
                 //mzd nije samo obicna prostortija nego basic il tk nes
 
 
-                s.Delete(prost);
-                s.Flush();
+               await s.DeleteAsync(prost);
+               await s.FlushAsync();
 
 
 
-                s.Close();
+                
 
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                //handle exceptions
+                return "Nemoguće obrisati sluzbenu prostoriju.".ToError(400);
             }
-
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+            return true;
 
         }
-        public static List<SluzbenaProstorijaPregled> vratiPGrupaProstorije(int id)
+        public static Result<List<SluzbenaProstorijaView>, ErrorMessage> VratiPGrupaProstorije(int id)
         {
-            List<SluzbenaProstorijaPregled> prost = new List<SluzbenaProstorijaPregled>();
+            ISession? s = null;
+            List<SluzbenaProstorijaView> prost = new List<SluzbenaProstorijaView>();
             try
             {
-                ISession s = DataLayer.GetSession();
-                IEnumerable<NarodnaSkupstina.Entiteti.SluzbenaProstorija> svePros = from o in s.Query<NarodnaSkupstina.Entiteti.SluzbenaProstorija>()
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                IEnumerable<SluzbenaProstorija> svePros = from o in s.Query<SluzbenaProstorija>()
                                                                                     where o.ProstorijaPoslanickeGrupe.Id == id
                                                                                     select o;
-                foreach(NarodnaSkupstina.Entiteti.SluzbenaProstorija r in svePros)
+                foreach(SluzbenaProstorija r in svePros)
                 {
-                    prost.Add(new SluzbenaProstorijaPregled(r.Id, r.BrojProstorije, r.Sprat));
+                    prost.Add(new SluzbenaProstorijaView(r));
                 }
-                s.Close();
+                
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e.ToString());
+                return "Nemoguće vratiti sve sluzbene prostorije koje su zauzete od strane PGrupe sa zadatim ID-jem.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return prost;
         }
-        public static SluzbenaProstorijaBasic vratiSluzbenaProstorija(int id)
+        public async static Task<Result<SluzbenaProstorijaView,ErrorMessage>> VratiSluzbenaProstorijaAsync(int id)
         {
-            SluzbenaProstorijaBasic o = new SluzbenaProstorijaBasic();
+            ISession? s = null;
+            SluzbenaProstorijaView o = default!;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                SluzbenaProstorija prostorija = s.Load<SluzbenaProstorija>(id);
+                SluzbenaProstorija prostorija = await s.LoadAsync<SluzbenaProstorija>(id);
 
-                o = new SluzbenaProstorijaBasic(prostorija.Id, prostorija.BrojProstorije, prostorija.Sprat);
-
-
-
-
-
-                s.Close();
+                o = new SluzbenaProstorijaView(prostorija);
 
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                //handle exceptions
+                return "Nemoguće vratiti sluzbenu prostoriju sa zadatim ID-jem.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
 
             return o;
 
         }
-        public static List<SluzbenaProstorijaPregled> vratiSveSluzbeneProstorije()
+        public async static Task<Result<List<SluzbenaProstorijaView>,ErrorMessage>> VratiSveSluzbeneProstorije()
         {
-            List<SluzbenaProstorijaPregled> prostorije = new List<SluzbenaProstorijaPregled>();
+            ISession? s = null;
+            List<SluzbenaProstorijaView> prostorije = new();
             try
             {
-                ISession s = DataLayer.GetSession();
-                IEnumerable<NarodnaSkupstina.Entiteti.SluzbenaProstorija> sveProstorije = from o in s.Query<NarodnaSkupstina.Entiteti.SluzbenaProstorija>()
-                                                                                          select o;
-                foreach (NarodnaSkupstina.Entiteti.SluzbenaProstorija p in sveProstorije)
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
                 {
-                    prostorije.Add(new SluzbenaProstorijaPregled(p.Id, p.BrojProstorije, p.Sprat));
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
                 }
-                s.Close();
+                IEnumerable<SluzbenaProstorija> sveProstorije = from o in await s.QueryOver<SluzbenaProstorija>().ListAsync()
+                                                                                          select o;
+                foreach (SluzbenaProstorija p in sveProstorije)
+                {
+                    prostorije.Add(new SluzbenaProstorijaView(p));
+                }
             }
-            catch(Exception ec)
+            catch(Exception)
             {
-                Console.WriteLine(ec.ToString());
+                return "Nemoguće vratiti sve sluzbene prostorije.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return prostorije;
         }
-        public static SluzbenaProstorijaBasic azurirajSluzbenuProstoriju(SluzbenaProstorijaBasic r)
+        public static Result<SluzbenaProstorijaView,ErrorMessage> AzurirajSluzbenuProstoriju(SluzbenaProstorijaView r)
         {
             try
             {
-                ISession s = DataLayer.GetSession();
-                NarodnaSkupstina.Entiteti.SluzbenaProstorija o = s.Load<NarodnaSkupstina.Entiteti.SluzbenaProstorija>(r.Id);
+                ISession? s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                SluzbenaProstorija o = s.Load<SluzbenaProstorija>(r.Id);
                 o.BrojProstorije = r.BrojProstorije;
                 o.Sprat = r.Sprat;
                 s.Update(o);
@@ -477,7 +514,7 @@ namespace NarodnaSkupstina
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                return "Nemoguće ažurirati sluzbenu prostoriju.".ToError(400);
             }
             return r;
         }
@@ -508,13 +545,17 @@ namespace NarodnaSkupstina
 
             return odInfos;
         }
-        public static void izmeniSluzbenaProstorija(SluzbenaProstorijaBasic sprost)
+        public static Result<SluzbenaProstorijaView,ErrorMessage> IzmeniSluzbenaProstorija(SluzbenaProstorijaView sprost)
         {
             try
             {
-                ISession s = DataLayer.GetSession();
+                ISession? s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                NarodnaSkupstina.Entiteti.SluzbenaProstorija o = s.Load<SluzbenaProstorija>(sprost.Id);
+                SluzbenaProstorija o = s.Load<SluzbenaProstorija>(sprost.Id);
 
                 o.BrojProstorije = sprost.BrojProstorije;
                 o.Sprat = sprost.Sprat;
@@ -522,7 +563,7 @@ namespace NarodnaSkupstina
 
 
 
-                s.SaveOrUpdate(o);
+                s.Update(o);
 
                 s.Flush();
 
@@ -530,168 +571,238 @@ namespace NarodnaSkupstina
             }
             catch (Exception ec)
             {
-                //handle exceptions
+                return "Nemoguće ažurirati sluzbenu prostoriju.".ToError(400);
             }
+            return sprost;
         }
 
-        public static void dodajSluzbenuProstoriju(SluzbenaProstorijaBasic sluzb)
+        public async static Task<Result<bool,ErrorMessage>>DodajSluzbenuProstoriju(SluzbenaProstorijaView sluzb)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                NarodnaSkupstina.Entiteti.SluzbenaProstorija sp = new NarodnaSkupstina.Entiteti.SluzbenaProstorija();
+                SluzbenaProstorija sp = new SluzbenaProstorija();
                 sp.BrojProstorije = sluzb.BrojProstorije;
                 sp.Sprat = sluzb.Sprat;
 
-                s.SaveOrUpdate(sp);
+                await s.SaveOrUpdateAsync(sp);
 
-                s.Flush();
+                await s.FlushAsync();
 
-                s.Close();
 
             }
             catch (Exception ec)
             {
-                Console.WriteLine(ec.Message);
+                return "Nemoguće dodati sluzbenu prostoriju.".ToError(400);
             }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+            return true;
         }
 
         #endregion
 
         #region PoslanickaGrupa
 
-        public static List<PoslanickaPregled> vratiSvePGrupa()
+        public static Result<List<PoslanickaGrupaView>,ErrorMessage> VratiSvePGrupa()
         {
-            List<PoslanickaPregled> grupe = new List<PoslanickaPregled>();
+            ISession? s = null;
+            List<PoslanickaGrupaView> grupe = new ();
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
 
-                IEnumerable<NarodnaSkupstina.Entiteti.PoslanickaGrupa> svePGrupe = from o in s.Query<NarodnaSkupstina.Entiteti.PoslanickaGrupa>()
-                                                                                   select o;
-                foreach (NarodnaSkupstina.Entiteti.PoslanickaGrupa p in svePGrupe)
+                if (!(s?.IsConnected ?? false))
                 {
-                    grupe.Add(new PoslanickaPregled
-                        (p.Id, p.Naziv));
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
                 }
-                s.Close();
+
+
+                IEnumerable<PoslanickaGrupa> svePGrupe = from o in s.Query<PoslanickaGrupa>()
+                                                                                   select o;
+                foreach (PoslanickaGrupa p in svePGrupe)
+                {
+                    grupe.Add(new PoslanickaGrupaView(p));
+                }
             }
-            catch(Exception ec)
+            catch (Exception)
             {
-                Console.WriteLine(ec.Message);
+                return "Nemoguće vratiti sve PGrupe.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return grupe;
         }
 
-        public static void dodajPoslanickuGrupu(PoslanickaBasic p)
+        public async static Task<Result<bool,ErrorMessage>>DodajPoslanickuGrupuAsync(PoslanickaGrupaView p)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                NarodnaSkupstina.Entiteti.PoslanickaGrupa o = new NarodnaSkupstina.Entiteti.PoslanickaGrupa();
-                
+                PoslanickaGrupa o = new PoslanickaGrupa();
+                //mzd treba stavimo ovde kolekciju za pgrupu
                 o.Id = p.Id;
 
-                s.SaveOrUpdate(o);
-                s.Flush();
-                s.Close();
+                await s.SaveOrUpdateAsync(o);
+                await s.FlushAsync();
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                Console.WriteLine(ec.Message);
+                return GetError("Nemoguće dodati Pgrupu.", 404);
             }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+            return true;
         }
 
-        public static PoslanickaBasic azurirajPGrupu(PoslanickaBasic p)
+        public async static Task<Result<PoslanickaGrupaView,ErrorMessage>> AzurirajPGrupuAsync(PoslanickaGrupaView p)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                NarodnaSkupstina.Entiteti.PoslanickaGrupa o = s.Load<NarodnaSkupstina.Entiteti.PoslanickaGrupa>(p.Naziv);
+                PoslanickaGrupa o = s.Load<PoslanickaGrupa>(p.Naziv);
                 o.Id = p.Id;
 
-                s.Update(o);
-                s.Flush();
-
-                s.Close();
+                await s.UpdateAsync(o);
+                await s.FlushAsync();
             }
-            catch (Exception ec )
+            catch (Exception)
             {
-                Console.WriteLine(ec.Message);
+                return "Nemoguće ažurirati Pgrupu.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return p; //msm da ovde ide o
         }
 
-        public static PoslanickaBasic vratiPGrupu(string id)
+        public async static Task<Result<PoslanickaGrupaView,ErrorMessage>> VratiPGrupuAsync(string id)
         {
-            PoslanickaBasic pb = new PoslanickaBasic();
+            ISession? s = null;
+            PoslanickaGrupaView pb = default!;
             try
             {
-                ISession s = DataLayer.GetSession();
-
-                NarodnaSkupstina.Entiteti.PoslanickaGrupa o = s.Load<NarodnaSkupstina.Entiteti.PoslanickaGrupa>(id);
-                pb = new PoslanickaBasic(o.Id, o.Naziv);
-                s.Close();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                PoslanickaGrupa o = await s.LoadAsync<PoslanickaGrupa>(id);
+                pb = new PoslanickaGrupaView(o);
             }
-            catch(Exception ec )
+            catch (Exception)
             {
-                Console.WriteLine(ec.Message);
+                return "Nemoguće vratiti Pgrupu sa zadatim ID-jem.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return pb;
         }
-        public static PoslanickaBasic vratiNazivPGrupu(string naziv)
+        public async static Task<Result<PoslanickaGrupaView,ErrorMessage>> VratiNazivPGrupu(string naziv)
         {
-            PoslanickaBasic pb = new PoslanickaBasic();
+            ISession? s = null;
+            PoslanickaGrupaView pb = new();
             try
             {
-                ISession s = DataLayer.GetSession();
-
-                NarodnaSkupstina.Entiteti.PoslanickaGrupa o = s.Load<NarodnaSkupstina.Entiteti.PoslanickaGrupa>(naziv);
-                pb = new PoslanickaBasic(o.Id, o.Naziv);
-                s.Close();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                PoslanickaGrupa o = await s.LoadAsync<PoslanickaGrupa>(naziv);
+                pb = new PoslanickaGrupaView(o);
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                Console.WriteLine(ec.Message);
+                return "Nemoguće vratiti PGrupu sa zadatim Imenom".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return pb;
         }
-        public static PoslanickaBasic vratiPGrupuNaziv(string naziv)
+        public async static Task<Result<PoslanickaGrupaView,ErrorMessage>> VratiPGrupuNaziv(string naziv)
         {
-            PoslanickaBasic pb = new PoslanickaBasic();
+            ISession? s = null;
+            PoslanickaGrupaView pb = new();
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
 
-                NarodnaSkupstina.Entiteti.PoslanickaGrupa o = s.Load<NarodnaSkupstina.Entiteti.PoslanickaGrupa>(naziv);
-                pb = new PoslanickaBasic(o.Id, o.Naziv);
-                s.Close();
+                PoslanickaGrupa o = await s.LoadAsync<PoslanickaGrupa>(naziv);
+                pb = new PoslanickaGrupaView(o);
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                Console.WriteLine(ec.Message);
+                return "Nemoguće vratiti PGrupu sa zadatim Imenom".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return pb;
         }
 
-        public static void obrisiPgrupu(string id)
+        public async static Task<Result<bool,ErrorMessage>>ObrisiPgrupuAsync(string id)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
-
-                NarodnaSkupstina.Entiteti.PoslanickaGrupa o = s.Load<NarodnaSkupstina.Entiteti.PoslanickaGrupa>(id);
-                s.Delete(o);
-                s.Flush();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                PoslanickaGrupa o = s.Load<PoslanickaGrupa>(id);
+              await  s.DeleteAsync(o);
+              await  s.FlushAsync();
                 s.Close();
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                Console.WriteLine(ec.Message);
+                return "Nemoguće obrisati PGrupu.".ToError(400);
             }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+            return true;
         }
 
 
@@ -699,20 +810,24 @@ namespace NarodnaSkupstina
 
         #region RadnoTelo
 
-        public static RadnoTeloBasic vratiRadnoTelo(string gg)
+        public async static Task<Result<RadnoTeloView,ErrorMessage>> VratiRadnoTelo(string gg)
         {
-            RadnoTeloBasic rd = new RadnoTeloBasic();
+            ISession? s = null;
+            RadnoTeloView rd = new ();
             try
             {
-                ISession s = DataLayer.GetSession();
-                NarodnaSkupstina.Entiteti.RadnoTelo r = s.Load<NarodnaSkupstina.Entiteti.RadnoTelo>(gg);
-                rd = new RadnoTeloBasic(r.Tip,r.Id);
-
-                s.Close();
+                s = DataLayer.GetSession();
+                RadnoTelo r = await s.LoadAsync<RadnoTelo>(gg);
+                rd = new RadnoTeloView(r);
             }
-            catch(Exception e)
+            catch (Exception)
             {
-                Console.WriteLine (e.Message);
+                return "Nemoguće vratiti RadnoTelo sa zadatim Tipom.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return rd;
         }
