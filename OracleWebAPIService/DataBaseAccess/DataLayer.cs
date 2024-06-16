@@ -14,8 +14,8 @@ namespace NarodnaSkupstina
 {
     class DataLayer
     {
-        private static ISessionFactory _factory = null;
-        private static object lockObj = new object();
+        private static ISessionFactory? _factory = null;
+        private static /*readonly*/ object lockObj = new object();
         public static ISession GetSession()
         {
             if (_factory == null)

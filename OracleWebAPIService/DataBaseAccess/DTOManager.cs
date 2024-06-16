@@ -164,7 +164,7 @@ namespace NarodnaSkupstina
                 await s.FlushAsync();
                 
             }
-            catch (Exception ec)
+            catch (Exception)
             {
                 return "Nemoguće dodati NarodnogPoslanika.".ToError(400);
             }
@@ -202,7 +202,7 @@ namespace NarodnaSkupstina
                 s.Flush();
                 s.Close();
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 return "Nemoguće ažurirati NarodnogPoslanika.".ToError(400);
             }
@@ -289,6 +289,7 @@ namespace NarodnaSkupstina
             return srb;
         }
 
+        ///////////////////////////////////////////////////////////////////////////
         public async static Task<Result<List<StalniRadniOdnosView>, ErrorMessage>> VratiSveStalneOdnosRadnike(/*int id*/) //mozda bude async mora se proba
         {
             //da msm da cu da promenim da ne bude asinhrona al aj ga ostavimo
@@ -303,7 +304,7 @@ namespace NarodnaSkupstina
                 {
                     return "Nemoguće otvoriti sesiju.".ToError(403);
                 }
-                IEnumerable<StalniRadniOdnos> sviOdnos = from o in s.Query<StalniRadniOdnos>()
+                IEnumerable<StalniRadniOdnos> sviOdnos = from o in await s.Query<StalniRadniOdnos>().ToListAsync()
                                                                                    /*where o.StalniRadnik.StalniRadniOdnos==true */                                                                            
                                                                                    select o;
                 
@@ -318,7 +319,6 @@ namespace NarodnaSkupstina
                     }
                     stalniO.Add(new StalniRadniOdnosView(sviO));
                 }
-                s.Close();
             }
             catch(Exception)
             {
@@ -331,7 +331,7 @@ namespace NarodnaSkupstina
             }
             return stalniO;
         }
-
+        ////////////////////////////////////////////////////////////////////////////////////
         public async static Task<Result<bool,ErrorMessage>>ObrisiStalnog(int id)
         {
             ISession? s = null;
@@ -512,7 +512,7 @@ namespace NarodnaSkupstina
                 s.Flush();
                 s.Close();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return "Nemoguće ažurirati sluzbenu prostoriju.".ToError(400);
             }
@@ -538,7 +538,7 @@ namespace NarodnaSkupstina
                 s.Close();
 
             }
-            catch (Exception ec)
+            catch (Exception)
             {
                 //handle exceptions
             }
@@ -569,7 +569,7 @@ namespace NarodnaSkupstina
 
                 s.Close();
             }
-            catch (Exception ec)
+            catch (Exception)
             {
                 return "Nemoguće ažurirati sluzbenu prostoriju.".ToError(400);
             }
@@ -597,7 +597,7 @@ namespace NarodnaSkupstina
 
 
             }
-            catch (Exception ec)
+            catch (Exception)
             {
                 return "Nemoguće dodati sluzbenu prostoriju.".ToError(400);
             }
@@ -879,7 +879,7 @@ namespace NarodnaSkupstina
                 }
                 s.Close();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return "Nemoguće vratiti prisutnost narodnog poslaniku u narodnoj skupstini.".ToError(400);
             }
@@ -911,7 +911,7 @@ namespace NarodnaSkupstina
                 s.Flush();
                 s.Close();
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 return "Nemoguće izmeniti prisutnost.".ToError(400);
             }
@@ -1186,7 +1186,7 @@ namespace NarodnaSkupstina
                 s.Flush();
                 s.Close();
             }
-            catch (Exception ec)
+            catch (Exception)
             {
                 return "Nemoguće ažurirati RadnogDana.".ToError(400);
             }
@@ -1233,7 +1233,7 @@ namespace NarodnaSkupstina
                 s.Flush();
                 s.Close();
             }
-            catch (Exception e) { return "Nemoguće obrisati RadniDan sa zadatim ID-jem.".ToError(400); }
+            catch (Exception) { return "Nemoguće obrisati RadniDan sa zadatim ID-jem.".ToError(400); }
             return true;
         }
 
@@ -1243,12 +1243,15 @@ namespace NarodnaSkupstina
 
 
         #region PredlogBiraca
-        public static void obrisiPravniAktBiraca(int id)
+        public static Result<bool, ErrorMessage>ObrisiPravniAktBiraca(int id)
         {
             try
             {
                 ISession s = DataLayer.GetSession();
-
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
                 PredlozioBiraci akt = s.Load<PredlozioBiraci>(id);
 
                 s.Delete(akt);
@@ -1259,117 +1262,168 @@ namespace NarodnaSkupstina
                 s.Close();
 
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                //handle exceptions
+                return "Nemoguće obrisati Pravni Akt Biraca sa zadatim ID-jem.".ToError(400);
             }
+            return true;
         }
 
-        public static List<PravniAktPregled> vratiPAkt()
+        public async static Task<Result<List<PravniAktView>,ErrorMessage>>VratiPAktAsync()
         {
-            List<PravniAktPregled> ins = new List<PravniAktPregled>();
+            ISession? s = null;
+            List<PravniAktView> ins = new ();
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                IEnumerable<PravniAkt> akt = from o in s.Query<PravniAkt>()
+                IEnumerable<PravniAkt> akt = from o in await s.Query<PravniAkt>().ToListAsync()
                                                     select o;
                 foreach(PravniAkt p in akt)
                 {
-                    ins.Add(new PravniAktPregled(p.Id, p.Tip,p.Naziv));
+                    ins.Add(new PravniAktView(p));
                 }
-                s.Close();
             }
-            catch(Exception ec)
+            catch (Exception)
             {
-                Console.WriteLine(ec.Message);
+                return "Nemoguće vratiti sve PravneAkte.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return ins;
         }
-        public static void obrisiPAkt(int id)
+        public async static Task<Result<bool,ErrorMessage>>ObrisiPAktAsync(int id)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                PravniAkt odeljenje = await s.LoadAsync<PravniAkt>(id);
 
-                PravniAkt odeljenje = s.Load<PravniAkt>(id);
-
-                s.Delete(odeljenje);
-                s.Flush();
+                await s.DeleteAsync(odeljenje);
+                await s.FlushAsync();
 
 
 
-                s.Close();
 
             }
-            catch (Exception ec)
+            catch (Exception)
             {
+                return "Greška prilikom brisanja PAkta.".ToError(400);
             }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+
+            return true;
         }
         
-            public static void sacuvajPredlogBiraca(PredlozioBiraciBasic bir)
+            public async static Task<Result<int,ErrorMessage>>SacuvajPredlogBiraca(PredlozioBiraciView bir)
         {
+            ISession? s = null;
+            int id = default;
             try
             {
-                ISession s = DataLayer.GetSession();
-
-                NarodnaSkupstina.Entiteti.PredlozioBiraci o = new NarodnaSkupstina.Entiteti.PredlozioBiraci();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                PredlozioBiraci o = default!;
 
                 o.Naziv = bir.Naziv;
                 o.Tip = bir.Tip;
-                o.brojBiraca = bir.broj;
+               /* o.brojBiraca = bir.broj;*/
                 /*NarodnaSkupstina.Entiteti.Prodavnica p = s.Load<Prodavnica.Entiteti.Prodavnica>(odeljenje.Prodavnica.Id);
                 o.PripadaProdavnici = p;*/
 
 
-                s.Save(o);
+               await s.SaveAsync(o);
 
-                s.Flush();
+               await s.FlushAsync();
 
-                s.Close();
+                id = o.AktID;
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                //handle exceptions
+                return "Nemoguće sačuvati odeljenje bez prodavnice.".ToError(400);
             }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+            return id;
         }
 
-            public static void sacuvajPredlogPoslanika(PredlozioNarodniPoslanikBasic bir)
+            public async static Task<Result<int,ErrorMessage>>SacuvajPredlogPoslanika(PredlozioNarodniPoslanikView bir)
         {
+            ISession? s = null;
+            int id = default;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
 
-                NarodnaSkupstina.Entiteti.PredlozioNarodniPoslanik o = new NarodnaSkupstina.Entiteti.PredlozioNarodniPoslanik();
+                PredlozioNarodniPoslanik o = new()
+                {
+                    Naziv = bir.Naziv,
+                    Tip = bir.Tip
+            };
 
-                o.Naziv = bir.Naziv;
-                o.Tip = bir.Tip;
+                
                 /*NarodnaSkupstina.Entiteti.Prodavnica p = s.Load<Prodavnica.Entiteti.Prodavnica>(odeljenje.Prodavnica.Id);
                 o.PripadaProdavnici = p;*/
 
 
-                s.Save(o);
+               await s.SaveAsync(o);
 
-                s.Flush();
+                await s.FlushAsync();
 
-                s.Close();
+                id = o.Id;
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                //handle exceptions
+                return "Nemoguće sačuvati odeljenje bez prodavnice.".ToError(400);
             }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+            return id;
         }
 
-        public static PredlozioBiraciBasic vratiPB(int id)
+        public async static Task<Result<PravniAktView,ErrorMessage>>VratiPBAsync(int id)
         {
-            PredlozioBiraciBasic o = new PredlozioBiraciBasic();
+            ISession? s = null;
+            PredlozioBiraciView o=default!;
             try
             {
-                ISession s = DataLayer.GetSession();
-
-                PredlozioBiraci predlog = s.Load<PredlozioBiraci>(id);
-
-                o.AktID = predlog.AktID;
+                s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                PredlozioBiraci predlog = await s.LoadAsync<PredlozioBiraci>(id);
+       
+                /*o.Id = predlog.AktID;*/
                 o.Naziv = predlog.Naziv;
                 o.Tip = predlog.Tip;
                 //o.broj=predlog.
@@ -1380,40 +1434,52 @@ namespace NarodnaSkupstina
                 s.Close();
 
             }
-            catch (Exception ec)
+            catch (Exception)
             {
-                //handle exceptions
+                return "Nemoguće vratiti odeljenja.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
 
             return o;
 
         }
 
-        public static void izmenPredlogBiraca(PredlozioBiraciBasic pred)
+        public static Result<PravniAktView,ErrorMessage>IzmenPredlogBiraca(PredlozioBiraciView pred)
         {
             try
             {
-                ISession s = DataLayer.GetSession();
-
-                NarodnaSkupstina.Entiteti.PredlozioBiraci o = s.Load<NarodnaSkupstina.Entiteti.PredlozioBiraci>(pred.AktID);
+                ISession? s = DataLayer.GetSession();
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+                PredlozioBiraci o = s.Load<PredlozioBiraci>(pred.Id);
 
                 o.Naziv = pred.Naziv;
                 o.Tip = pred.Tip;
-                o.brojBiraca = pred.broj;
+                /*o.PredlozioBiraci = pred.PredlozioBiraci;*/
 
 
 
 
-                s.SaveOrUpdate(o);
+                s./*SaveOr*/Update(o);
 
                 s.Flush();
 
                 s.Close();
             }
-            catch (Exception ec)
+            catch (Exception)
             {
                 //handle exceptions
+                //throw;
+                return "Nemoguće ažurirati PredlogBiraca.".ToError(400);
             }
+
+            return pred;
         }
 
         /*public static void sacuvajPredlogBiraca(PredlozioBiraciBasic pred)
