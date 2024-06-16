@@ -7,4 +7,5 @@
 	*vratiSveNarodnePoslanikeAsync je odradjen kao test
 		*proveriti VratiSveStalneOdnosRadnike
 		*proveriti RadnoTelo(AnketniOdbor ako ne radi prilikom testiranja)
-	*sledece na redu BioPrisutan
+	*BioPrisutan VratiPrisutnotst ako bude problem moguce da je do foreach dela al ce vidimo kad se krene testiranje
+		*PravniAkt
