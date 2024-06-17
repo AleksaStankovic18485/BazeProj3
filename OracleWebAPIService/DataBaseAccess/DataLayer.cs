@@ -10,7 +10,7 @@ using NarodnaSkupstina.Mapiranja;
 using System.Configuration;
 using NarodnaSkupstina.Entiteti;
 
-namespace NarodnaSkupstina
+namespace DataBaseAccess
 {
     class DataLayer
     {

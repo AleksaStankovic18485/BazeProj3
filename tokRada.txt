@@ -10,3 +10,7 @@
 	*BioPrisutan VratiPrisutnotst ako bude problem moguce da je do foreach dela al ce vidimo kad se krene testiranje
 		*PravniAkt (VratiPBAsync) mzd se dese promene
 		*PravniAkt povratni za neke, mzd nece trebati tako al vidcm kad se testira
+		*vratiSluzbenaProstorijaPGrupa
+5. Code folder
+6. Controleri
+	*VratiSefoveAsync pogledati
