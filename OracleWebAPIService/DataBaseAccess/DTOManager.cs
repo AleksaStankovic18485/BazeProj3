@@ -383,13 +383,13 @@ namespace DataBaseAccess
             }
             catch (Exception)
             {
-                return "Nemoguće vratiti šefa.".ToError(400);
+                return "StalniRadnik sa tim ID-em ne postoji.".ToError(400);
             }
             return srb;
         }
 
         ///////////////////////////////////////////////////////////////////////////
-        public async static Task<Result<List<StalniRadniOdnosView>, ErrorMessage>> VratiSveStalneOdnosRadnike(/*int id*/) //mozda bude async mora se proba
+        public async static Task<Result<List<StalniRadniOdnosView>, ErrorMessage>> VratiSveStalneOdnosRadnike(int id) //mozda bude async mora se proba
         {
             //da msm da cu da promenim da ne bude asinhrona al aj ga ostavimo
             //dok ne moz se testira cu ga samo ostavimo u txt 
@@ -403,8 +403,8 @@ namespace DataBaseAccess
                 {
                     return "Nemoguće otvoriti sesiju.".ToError(403);
                 }
-                IEnumerable<StalniRadniOdnos> sviOdnos = from o in await s.Query<StalniRadniOdnos>().ToListAsync()
-                                                                                   /*where o.StalniRadnik.StalniRadniOdnos==true */                                                                            
+                IEnumerable<StalniRadniOdnos> sviOdnos = from o in s.Query<StalniRadniOdnos>()
+                                                                                   where o.StalniRadnik!.StalniRadniOdnos==true                                                                           
                                                                                    select o;
                 
 
@@ -595,11 +595,12 @@ namespace DataBaseAccess
             }
             return prostorije;
         }
-        public static Result<SluzbenaProstorijaView,ErrorMessage> AzurirajSluzbenuProstoriju(SluzbenaProstorijaView r)
+        public static async Task<Result<SluzbenaProstorijaView,ErrorMessage>> AzurirajSluzbenuProstorijuAsync(SluzbenaProstorijaView r)
         {
+            ISession? s = null;
             try
             {
-                ISession? s = DataLayer.GetSession();
+                 s = DataLayer.GetSession();
                 if (!(s?.IsConnected ?? false))
                 {
                     return "Nemoguće otvoriti sesiju.".ToError(403);
@@ -607,13 +608,18 @@ namespace DataBaseAccess
                 SluzbenaProstorija o = s.Load<SluzbenaProstorija>(r.Id);
                 o.BrojProstorije = r.BrojProstorije;
                 o.Sprat = r.Sprat;
-                s.Update(o);
-                s.Flush();
-                s.Close();
+                await s.UpdateAsync(o);
+                await s.FlushAsync();
+                
             }
             catch (Exception)
             {
                 return "Nemoguće ažurirati sluzbenu prostoriju.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return r;
         }
@@ -913,6 +919,37 @@ namespace DataBaseAccess
 
         #region RadnoTelo
 
+        public static async Task<Result<List<RadnoTeloView>, ErrorMessage>> VratiSvaRadnaTela()
+        {
+            List<RadnoTeloView> data = new();
+
+            ISession? s = null;
+
+            try
+            {
+                s = DataLayer.GetSession();
+
+                if (!(s?.IsConnected ?? false))
+                {
+                    return "Nemoguće otvoriti sesiju.".ToError(403);
+                }
+
+                data = (await s.QueryOver<RadnoTelo>().ListAsync())
+                               .Select(p => new RadnoTeloView(p)).ToList();
+            }
+            catch (Exception)
+            {
+                return "Došlo je do greške prilikom prikupljanja informacija o odeljenjima.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
+
+            return data;
+        }
+
         public async static Task<Result<RadnoTeloView,ErrorMessage>> VratiRadnoTelo(string gg)
         {
             ISession? s = null;
@@ -1144,7 +1181,7 @@ namespace DataBaseAccess
             return sednice;
         }
 
-        public async static Task<Result<SednicaView, ErrorMessage>> AzurirajSednicu(SednicaView sb)
+        public async static Task<Result<SednicaView, ErrorMessage>> AzurirajSednicuAsync(SednicaView sb)
         {
             ISession? s = null;
             try
@@ -1210,7 +1247,7 @@ namespace DataBaseAccess
             return dani;
         }
 
-        public static Result<List<RadniDanView>,ErrorMessage> VratiSveRDaneSednice(int id)
+        public async static Task<Result<List<RadniDanView>,ErrorMessage>> VratiSveRDaneSednice(int id)
         {
             ISession? s = null;
             List<RadniDanView> dani = new ();
@@ -1222,6 +1259,8 @@ namespace DataBaseAccess
                                                                           select o;
                 foreach (RadniDan r in sviDani)
                 {
+                    var sed = await VratiSednicuAsync(r.Sedni?.Id ?? -1);
+                    if(sed.IsError)
                     dani.Add(new RadniDanView(r));
                 }
             }
@@ -1271,11 +1310,12 @@ namespace DataBaseAccess
             }
             return true;
         }
-        public static Result<RadniDanView, ErrorMessage> AzurirajRadniDan(RadniDanView r)
+        public async static Task<Result<RadniDanView, ErrorMessage>> AzurirajRadniDanAsync(RadniDanView r)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
                 if (!(s?.IsConnected ?? false))
                 {
                     return "Nemoguće otvoriti sesiju.".ToError(403);
@@ -1285,13 +1325,18 @@ namespace DataBaseAccess
                 o.BrojP = r.BrojP;
                 o.VremeP = r.VremeP;
                 o.VremeK = r.VremeK;
-                s.Update(o);
-                s.Flush();
-                s.Close();
+               await s.UpdateAsync(o);
+                await s.FlushAsync();
+                
             }
             catch (Exception)
             {
                 return "Nemoguće ažurirati RadnogDana.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return r;
         }
@@ -1322,21 +1367,26 @@ namespace DataBaseAccess
             return rdb;
         }
 
-        public static Result<bool, ErrorMessage>ObrisiRadniDan(int id)
-        { 
+        public async static Task<Result<bool, ErrorMessage>>ObrisiRadniDan(int id)
+        {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
                 if (!(s?.IsConnected ?? false))
                 {
                     return "Nemoguće otvoriti sesiju.".ToError(403);
                 }
                 RadniDan r = s.Load<RadniDan>(id);
-                s.Delete(r);
-                s.Flush();
-                s.Close();
+                await s.DeleteAsync(r);
+                await s.FlushAsync();
             }
             catch (Exception) { return "Nemoguće obrisati RadniDan sa zadatim ID-jem.".ToError(400); }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
+            }
             return true;
         }
 
@@ -1346,28 +1396,30 @@ namespace DataBaseAccess
 
 
         #region PredlogBiraca
-        public static Result<bool, ErrorMessage>ObrisiPravniAktBiraca(int id)
+        public async static Task<Result<bool, ErrorMessage>>ObrisiPravniAktBiracaAsync(int id)
         {
+            ISession? s = null;
             try
             {
-                ISession s = DataLayer.GetSession();
+                s = DataLayer.GetSession();
                 if (!(s?.IsConnected ?? false))
                 {
                     return "Nemoguće otvoriti sesiju.".ToError(403);
                 }
-                PredlozioBiraci akt = s.Load<PredlozioBiraci>(id);
+                PredlozioBiraci akt = await s.LoadAsync<PredlozioBiraci>(id);
 
-                s.Delete(akt);
-                s.Flush();
-
-
-
-                s.Close();
+                await s.DeleteAsync(akt);
+                await s.FlushAsync();
 
             }
             catch (Exception)
             {
                 return "Nemoguće obrisati Pravni Akt Biraca sa zadatim ID-jem.".ToError(400);
+            }
+            finally
+            {
+                s?.Close();
+                s?.Dispose();
             }
             return true;
         }

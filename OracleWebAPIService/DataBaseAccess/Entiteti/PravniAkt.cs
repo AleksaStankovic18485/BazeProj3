@@ -7,37 +7,37 @@ using System.Threading.Tasks;
 
 namespace NarodnaSkupstina.Entiteti
 {
-    public class PravniAkt
+    internal class PravniAkt
     {
-        public virtual int Id { get; protected set; }
-        public virtual string Naziv { get; set; }
-        public virtual string Tip { get; set; }
+        internal protected virtual int Id { get; protected set; }
+        internal protected virtual string Naziv { get; set; }
+        internal protected virtual string Tip { get; set; }
 
         //
-        public PravniAkt()
+        internal PravniAkt()
         {
 
         }
 
     }
-    public class Vlada : PravniAkt 
+    internal class Vlada : PravniAkt 
     {
         public Vlada()
         {
 
         }
     }
-    public class PredlozioNarodniPoslanik : PravniAkt
+    internal class PredlozioNarodniPoslanik : PravniAkt
     {
-        public virtual IList<PredlozioNarodniPoslanik> PredlogPos { get; set; }
-        public PredlozioNarodniPoslanik()
+        internal protected virtual IList<PredlozioNarodniPoslanik> PredlogPos { get; set; }
+        internal PredlozioNarodniPoslanik()
         {
             PredlogPos = new List<PredlozioNarodniPoslanik>();
         }
     }
-    public class PredlozioBiraci : PravniAkt
+    internal class PredlozioBiraci : PravniAkt
     {
-        public virtual int brojBiraca { get; set; }
-        public PredlozioBiraci() { }
+        internal protected virtual int brojBiraca { get; set; }
+        internal PredlozioBiraci() { }
     }
 }

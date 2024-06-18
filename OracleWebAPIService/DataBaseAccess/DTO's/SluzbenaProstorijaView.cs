@@ -13,7 +13,7 @@ namespace DataBaseAccess.DTO_s
         public virtual int BrojProstorije { get; set; }
         public virtual int Sprat { get; set; }
         //veza
-        public virtual PoslanickaGrupa ProstorijaPoslanickeGrupe { get; set; }
+        public virtual PoslanickaGrupaView ProstorijaPoslanickeGrupe { get; set; }
 
         public SluzbenaProstorijaView()
         {

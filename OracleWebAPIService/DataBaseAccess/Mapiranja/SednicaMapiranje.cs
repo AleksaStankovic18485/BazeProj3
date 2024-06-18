@@ -44,7 +44,7 @@ namespace NarodnaSkupstina.Mapiranja
 
     }
 
-    public class VandrednaMapiranje : SubclassMap<Sednica>
+    internal class VandrednaMapiranje : SubclassMap<Sednica>
     {
         public VandrednaMapiranje()
         {

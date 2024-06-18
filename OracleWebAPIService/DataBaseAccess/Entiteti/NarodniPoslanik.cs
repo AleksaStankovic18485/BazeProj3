@@ -6,40 +6,40 @@ using System.Threading.Tasks;
 
 namespace NarodnaSkupstina.Entiteti
 {
-    public class NarodniPoslanik
+    internal class NarodniPoslanik
     {
-        public virtual int Id { get; protected set; }
-        public virtual string JMBG { get; set; }
-        public virtual int IdentifikacioniBroj { get; set; }
-        public virtual string Ime { get; set; }
-        public virtual string ImeJednogRoditelja { get; set; }
-        public virtual string Prezime { get; set; }
+        internal protected virtual int Id { get; protected set; }
+        internal protected virtual string JMBG { get; set; }
+        internal protected virtual int IdentifikacioniBroj { get; set; }
+        internal protected virtual string Ime { get; set; }
+        internal protected virtual string ImeJednogRoditelja { get; set; }
+        internal protected virtual string Prezime { get; set; }
         /*public virtual string IzbornaLista { get; set; } ??*/
-        public virtual DateTime DatumRodjenja { get; set; }
-        public virtual string MestoRodjenja { get; set; }
-        public virtual string Grad { get; set; }
-        public virtual string Adresa { get; set; }
-        public virtual string BrojTelefona { get; set; }
-        public virtual string BrojMobilnog { get; set; }
-        public virtual bool StalniRadniOdnos { get;  set; }
+        internal protected virtual DateTime DatumRodjenja { get; set; }
+        internal protected virtual string MestoRodjenja { get; set; }
+        internal protected virtual string Grad { get; set; }
+        internal protected virtual string Adresa { get; set; }
+        internal protected virtual string BrojTelefona { get; set; }
+        internal protected virtual string BrojMobilnog { get; set; }
+        internal protected virtual bool StalniRadniOdnos { get;  set; }
 
         /*public virtual int IdPrisutnogGradjana { get; set; }
          ADVANCED*/
-        public virtual PoslanickaGrupa PGrupa { get; set; }
-        public virtual RadnoTelo RadnoT { get; set; }
+        internal protected virtual PoslanickaGrupa PGrupa { get; set; }
+        internal protected virtual RadnoTelo RadnoT { get; set; }
 
         //veze
 
-        public NarodniPoslanik()
+        internal NarodniPoslanik()
         {
             //PGrupa=new List<PoslanickaGrupa>();
         }
     }
-    public class StalniRadnik : NarodniPoslanik
+    internal class StalniRadnik : NarodniPoslanik
     {
-        public virtual IList<StalniRadniOdnos> Stalni { get; set; }
+        internal protected virtual IList<StalniRadniOdnos> Stalni { get; set; }
 
-        public StalniRadnik() { Stalni = new List<StalniRadniOdnos>(); }
+        internal StalniRadnik() { Stalni = new List<StalniRadniOdnos>(); }
     }
 }
 

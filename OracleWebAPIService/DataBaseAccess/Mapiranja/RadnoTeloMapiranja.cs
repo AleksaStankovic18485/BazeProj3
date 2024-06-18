@@ -7,7 +7,7 @@ using FluentNHibernate.Mapping;
 
 namespace Prodavnica.Mapiranja
 {
-    class RadnoTeloMapiranja : ClassMap<RadnoTelo>
+    internal class RadnoTeloMapiranja : ClassMap<RadnoTelo>
     {
         public RadnoTeloMapiranja()
         {
@@ -33,7 +33,7 @@ namespace Prodavnica.Mapiranja
         }
     }
 
-    class StalniOdboriMapiranja : SubclassMap<StalniOdbori>
+    internal class StalniOdboriMapiranja : SubclassMap<StalniOdbori>
     {
         public StalniOdboriMapiranja()
         {
@@ -41,7 +41,7 @@ namespace Prodavnica.Mapiranja
         }
     }
 
-    class AnketniOdboriMapiranja : SubclassMap<AnketniOdbori>
+    internal class AnketniOdboriMapiranja : SubclassMap<AnketniOdbori>
     {
         public AnketniOdboriMapiranja()
         {
@@ -49,14 +49,14 @@ namespace Prodavnica.Mapiranja
         }
     }
 
-    class KomisijeMapiranja : SubclassMap<Komisije>
+    internal class KomisijeMapiranja : SubclassMap<Komisije>
     {
         public KomisijeMapiranja()
         {
             DiscriminatorValue("KOMISIJE");
         }
     }
-    class PrivremeniOdbori : SubclassMap<PrivremeniOdbori>
+    internal class PrivremeniOdbori : SubclassMap<PrivremeniOdbori>
     {
         public PrivremeniOdbori()
         {

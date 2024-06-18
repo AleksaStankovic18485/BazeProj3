@@ -45,7 +45,7 @@ namespace NarodnaSkupstina.Mapiranja
 
     }
 
-    public class StalniRadnikMapiranje : SubclassMap<StalniRadnik>
+    internal class StalniRadnikMapiranje : SubclassMap<StalniRadnik>
     {
         public StalniRadnikMapiranje()
         {

@@ -6,23 +6,23 @@ using System.Threading.Tasks;
 
 namespace NarodnaSkupstina.Entiteti
 {
-    public class Sednica
+    internal class Sednica
     {
-        public virtual int Id { get; protected set; }
-        public virtual int BrojZasedanja { get; set; }
-        public virtual int BrojSaziva { get; set; }
-        public virtual DateTime DatumEND { get; set; }
-        public virtual DateTime DatumStart { get; set; }
-        public virtual bool TipFlag { get; set; }
+        internal protected virtual int Id { get; protected set; }
+        internal protected virtual int BrojZasedanja { get; set; }
+        internal protected virtual int BrojSaziva { get; set; }
+        internal protected virtual DateTime DatumEND { get; set; }
+        internal protected virtual DateTime DatumStart { get; set; }
+        internal protected virtual bool TipFlag { get; set; }
 
-        /*public virtual int IdPrisutnogGradjana { get; set; }
+        /*internal protected virtual int IdPrisutnogGradjana { get; set; }
          ADVANCED*/
-        public virtual IList<BioPrisutan> PrustniSednici { get; set; }
-        public virtual IList<NarodniPoslanik> Poslanici { get; set; }
-        public virtual IList<RadniDan> RDani { get; set; }
+        internal protected virtual IList<BioPrisutan> PrustniSednici { get; set; }
+        internal protected virtual IList<NarodniPoslanik> Poslanici { get; set; }
+        internal protected virtual IList<RadniDan> RDani { get; set; }
 
         //veze
-        public Sednica()
+        internal  Sednica()
         {
             Poslanici=new List<NarodniPoslanik>();
             PrustniSednici=new List<BioPrisutan>();
@@ -30,10 +30,10 @@ namespace NarodnaSkupstina.Entiteti
         }
 
     }
-    public class Vandredna : Sednica
+    internal  class Vandredna : Sednica
     {
-        public virtual bool Zahtevana { get; set; }
-        public Vandredna() { }
+        internal protected virtual bool Zahtevana { get; set; }
+        internal protected Vandredna() { }
     }
 }
 

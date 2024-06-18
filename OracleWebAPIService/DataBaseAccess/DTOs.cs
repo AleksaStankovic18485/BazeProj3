@@ -359,7 +359,7 @@ namespace NarodnaSkupstina
 
     #region BioPrisutan
 
-    public class BioPrisutanPregled
+   /* public class BioPrisutanPregled
     {
         public BioPrisutanId Id;
         public DateTime Dod;
@@ -375,7 +375,7 @@ namespace NarodnaSkupstina
             Dod = dod;
             Ddo = ddo;
         }
-    }
+    }*/
 
     public class BioPrisutanBasic
     {
@@ -437,10 +437,10 @@ namespace NarodnaSkupstina
         public DateTime DSTR;
         public bool TF; 
 
-        public virtual IList<NarodniPoslanik> Poslanici { get; set; }
+       // public virtual IList<NarodniPoslanik> Poslanici { get; set; }
         public virtual IList<RadniDanBasic> RD { get; set; }
         public SednicaBasic() {
-            Poslanici=new List<NarodniPoslanik>();
+       //     Poslanici=new List<NarodniPoslanik>();
             RD=new List<RadniDanBasic>();
         }
         public SednicaBasic(int id, int brZ, int brS, DateTime dEND, DateTime dSTR, bool tF) :this()

@@ -13,8 +13,13 @@ namespace DataBaseAccess.DTO_s
         public  int BrojP { get; set; }
         public  DateTime VremeP { get; set; }
         public  DateTime VremeK { get; set; }
+        public int BrojZasedanja { get; set; }
+        public int BrojSaziva { get; set; }
+        public DateTime DatumP { get; set; }
+        public DateTime DatumEnd { get; set; }
+        public bool TipS { get; set; }
 
-        public virtual Sednica Sedni { get; set; }
+        public  SednicaView? Sedni;
 
         //veze
 
@@ -30,7 +35,11 @@ namespace DataBaseAccess.DTO_s
                 BrojP = r.BrojP;
                 VremeP = r.VremeP;
                 VremeK = r.VremeK;
-                Sedni = r.Sedni;
+                BrojZasedanja = r.Sedni.BrojZasedanja;
+                BrojSaziva=r.Sedni.BrojSaziva;
+                DatumP = r.Sedni.DatumStart;
+                DatumEnd = r.Sedni.DatumEND;
+                TipS=r.Sedni.TipFlag;
             }
         }
     }

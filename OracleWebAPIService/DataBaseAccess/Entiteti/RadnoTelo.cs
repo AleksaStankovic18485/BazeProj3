@@ -1,38 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NarodnaSkupstina.Entiteti
+﻿namespace NarodnaSkupstina.Entiteti
 {
-    public class RadnoTelo
+    internal abstract class RadnoTelo
     {
-        public virtual int Id { get; protected set; }
-        public virtual string Tip { get; set; }
-        public virtual IList<NarodniPoslanik> Clanovi { get; set; }
-        public virtual SluzbenaProstorija SluzbenaProst { get; set; }
+        internal protected virtual int Id { get; set; }
+        internal protected virtual string? Tip { get; set; }
+        internal protected virtual SluzbenaProstorija? SluzbenaProst { get; set; }
+        internal protected virtual IList<NarodniPoslanik>? Clanovi { get; set; }
+        
 
         //veze
 
-        public RadnoTelo()
+        internal RadnoTelo()
         {
             Clanovi=new List<NarodniPoslanik>();
         }
     }
-    public class StalniOdbori : RadnoTelo
+    internal class StalniOdbori : RadnoTelo
     {
         
     }
-    public class AnketniOdbori : RadnoTelo
+    internal class AnketniOdbori : RadnoTelo
     {
 
     }
-    public class Komisije : RadnoTelo
+    internal class Komisije : RadnoTelo
     {
 
     }
-    public class PrivremeniOdbori : RadnoTelo
+    internal class PrivremeniOdbori : RadnoTelo
     {
 
     }

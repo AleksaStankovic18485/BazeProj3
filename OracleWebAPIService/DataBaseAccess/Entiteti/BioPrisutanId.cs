@@ -5,10 +5,10 @@ using System.Text;
 
 namespace NarodnaSkupstina.Entiteti
 {
-    public class BioPrisutanId
+    internal class BioPrisutanId
     {
-        public virtual NarodniPoslanik NPPrisutan { get; set; }
-        public virtual Sednica SednicaZasedanja { get; set; }
+        internal protected virtual NarodniPoslanik NPPrisutan { get; set; }
+        internal protected virtual Sednica SednicaZasedanja { get; set; }
 
         public override bool Equals(object obj)
         {

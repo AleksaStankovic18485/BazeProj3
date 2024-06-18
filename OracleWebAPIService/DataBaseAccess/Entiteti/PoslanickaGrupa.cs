@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace NarodnaSkupstina.Entiteti
 {
-    public class PoslanickaGrupa
+    internal class PoslanickaGrupa
     {
-        public virtual int Id { get; set; }
-        public virtual string Naziv { get; set; }
+        internal protected virtual int Id { get; set; }
+        internal protected virtual string Naziv { get; set; }
 
         /*public virtual string Predsednik { get; set; }
         public virtual string Zamenik { get; set; }*/
@@ -18,10 +18,10 @@ namespace NarodnaSkupstina.Entiteti
 
         //veze
         //public virtual IList<sluzbenaProstorija> Prostorije { get; set; }
-        public virtual IList<NarodniPoslanik> Clanovi { get; set; }
-        public virtual IList<SluzbenaProstorija> Prostorije { get; set; }
+        internal protected virtual IList<NarodniPoslanik>? Clanovi { get; set; }
+        internal protected virtual IList<SluzbenaProstorija>? Prostorije { get; set; }
         //
-        public PoslanickaGrupa()
+        internal PoslanickaGrupa()
         {
             Clanovi = new List<NarodniPoslanik>();
             Prostorije = new List<SluzbenaProstorija>();

@@ -6,21 +6,21 @@ using System.Threading.Tasks;
 
 namespace NarodnaSkupstina.Entiteti
 {
-    public class RadniDan
+    internal class RadniDan
     {
-        public virtual int Id { get; protected set; }
-        public virtual int BrojP { get; set; }
-        public virtual DateTime VremeP { get; set; }
-        public virtual DateTime VremeK { get; set; }
+        internal protected virtual int Id { get; protected set; }
+        internal protected virtual int BrojP { get; set; }
+        internal protected virtual DateTime VremeP { get; set; }
+        internal protected virtual DateTime VremeK { get; set; }
 
 
         /*public virtual int IdPrisutnogGradjana { get; set; }
          ADVANCED*/
-        public virtual Sednica Sedni { get; set; }
+        internal protected virtual Sednica Sedni { get; set; }
 
         //veze
 
-        public RadniDan()
+        internal RadniDan()
         {
             /*PGrupe=new List<PoslanickaGrupa>();*/
         }

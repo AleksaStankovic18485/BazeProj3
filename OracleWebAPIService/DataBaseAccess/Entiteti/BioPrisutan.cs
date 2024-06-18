@@ -5,13 +5,13 @@ using System.Text;
 
 namespace NarodnaSkupstina.Entiteti
 {
-    public class BioPrisutan
+    internal class BioPrisutan
     {
-        public virtual BioPrisutanId Id { get; set; }
-        public virtual DateTime DatumOd { get; set; }
-        public virtual DateTime? DatumDo { get; set; }
+        internal protected virtual BioPrisutanId Id { get; set; }
+        internal protected virtual DateTime DatumOd { get; set; }
+        internal protected virtual DateTime? DatumDo { get; set; }
 
-        public BioPrisutan()
+        internal BioPrisutan()
         {
             Id = new BioPrisutanId();
         }

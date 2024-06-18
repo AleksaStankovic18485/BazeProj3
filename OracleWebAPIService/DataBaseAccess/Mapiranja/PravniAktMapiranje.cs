@@ -33,7 +33,7 @@ namespace NarodnaSkupstina.Mapiranja
 
     }
 
-    public class PredlozioNarodniPoslanikMapiranje : SubclassMap<PravniAkt>
+    internal class PredlozioNarodniPoslanikMapiranje : SubclassMap<PravniAkt>
     {
         public PredlozioNarodniPoslanikMapiranje()
         {
@@ -42,7 +42,7 @@ namespace NarodnaSkupstina.Mapiranja
             //HasMany(x => x.Stalni).KeyColumn("BROJRADNEKNJIZICE").LazyLoad().Cascade.All().Inverse();
         }
     }
-    public class PredlozioBiraciMapiranje : SubclassMap<PravniAkt>
+    internal class PredlozioBiraciMapiranje : SubclassMap<PravniAkt>
     {
         public PredlozioBiraciMapiranje()
         {
