@@ -21,6 +21,7 @@ namespace DataBaseAccess
         {
             ISession? s = null;
             List<NarodniPoslanikView> np = new ();
+
             try
             {
                  s = DataLayer.GetSession();
@@ -30,14 +31,12 @@ namespace DataBaseAccess
                     return "Sesija se ne moze otvoriti".ToError(403);
                 }
 
-                IEnumerable<NarodniPoslanik> sviPoslanici = from o in await s.Query<NarodniPoslanik>().ToListAsync()
+                IEnumerable<NarodniPoslanik> sviPoslanici = from o in await s.QueryOver<NarodniPoslanik>().ListAsync()
                                                                                       select o;
                 foreach(NarodniPoslanik p in sviPoslanici)
                 {
-                    var posla = new NarodniPoslanikView(p)
-                    {
-                        //
-                    };
+                    var posla = new NarodniPoslanikView(p);
+             
                     np.Add(posla);
                 }
   
@@ -757,9 +756,13 @@ namespace DataBaseAccess
                     return "Nemoguće otvoriti sesiju.".ToError(403);
                 }
 
-                PoslanickaGrupa o = new PoslanickaGrupa();
+                PoslanickaGrupa o = new()
+                {
+                    Id = p.Id
+
+                };
                 //mzd treba stavimo ovde kolekciju za pgrupu
-                o.Id = p.Id;
+                
 
                 await s.SaveOrUpdateAsync(o);
                 await s.FlushAsync();

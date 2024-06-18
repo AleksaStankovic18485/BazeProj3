@@ -3,6 +3,7 @@ using DataBaseAccess;
 using DataBaseAccess.DTO_s;
 
 namespace OracleWebAPIService.Controllers;
+
 [ApiController]
 [Route("[controller]")]
 public class NarodniPoslanikController : ControllerBase

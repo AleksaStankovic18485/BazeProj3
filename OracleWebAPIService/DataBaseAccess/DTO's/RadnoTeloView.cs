@@ -11,7 +11,7 @@ namespace DataBaseAccess.DTO_s
     {
         public virtual int Id { get; protected set; }
         public virtual string Tip { get; set; }
-        public virtual IList<NarodniPoslanikView> Clanovi { get; set; }
+        public virtual IList<NarodniPoslanikView>? Clanovi { get; set; }
         public virtual SluzbenaProstorijaView SluzbenaProst { get; set; }
 
         //veze
@@ -24,8 +24,8 @@ namespace DataBaseAccess.DTO_s
         {
             if (r != null)
             {
-                Id = r.Id;
                 Tip = r.Tip;
+                Id = r.Id;     
                 SluzbenaProst = new SluzbenaProstorijaView(r.SluzbenaProst);
             }
         }

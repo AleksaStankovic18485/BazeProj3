@@ -49,7 +49,7 @@ namespace DataBaseAccess.DTO_s
                 BrojMobilnog = n.BrojMobilnog;
                 StalniRadniOdnos = n.StalniRadniOdnos;
                 PGrupa = new PoslanickaGrupaView(n.PGrupa);
-                RadnoT=new RadnoTeloView(n.RadnoT);
+                //RadnoT=new RadnoTeloView(n.RadnoT);
                     }
         }
     }

@@ -14,3 +14,14 @@
 5. Code folder
 6. Controleri
 	*VratiSefoveAsync pogledati
+	*LinkStanjeNP
+	*DodajPoslanickyGrupuAsync
+
+-----------------------------------------
+TEST:
+	NP: 	GET(sve) ✅
+		GET(pgrupa) ✅
+		DEL ✅
+		POST(povezi) ✅
+	PGRUPA: GET(pgrupa) ✅
+		DEL ✅
